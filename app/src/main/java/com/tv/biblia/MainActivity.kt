@@ -3,6 +3,8 @@ package com.tv.biblia
 import android.os.Bundle
 import android.os.Process
 import android.util.Log
+import android.graphics.Color as AndroidColor
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
@@ -44,6 +46,13 @@ class MainActivity : ComponentActivity() {
         }
 
         super.onCreate(savedInstanceState)
+
+        window.statusBarColor = AndroidColor.rgb(21, 88, 176)
+        window.navigationBarColor = AndroidColor.rgb(21, 88, 176)
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
 
         val informe = try {
             if (archivoError.exists()) archivoError.readText() else null
