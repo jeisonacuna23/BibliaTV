@@ -38,8 +38,8 @@ class BibliaViewModel(app: Application) : AndroidViewModel(app) {
 
                 val libros = json.decodeFromString<List<Libro>>(texto)
                 _estado.value = BibliaUiState.Listo(libros)
-            } catch (e: Exception) {
-                _estado.value = BibliaUiState.Error(e.message ?: "Error desconocido")
+            } catch (e: Throwable) {
+                _estado.value = BibliaUiState.Error("${e.javaClass.simpleName}: ${e.message ?: "Error sin mensaje"}")
             }
         }
     }
