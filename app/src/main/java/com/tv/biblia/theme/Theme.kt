@@ -18,6 +18,7 @@ fun BibliaTVTheme(
 ) {
     MaterialTheme(
         colorScheme = BibliaColorScheme,
+        typography = BibliaTypography,
         content = content
     )
 }
