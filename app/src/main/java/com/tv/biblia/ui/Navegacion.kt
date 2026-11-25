@@ -1,6 +1,5 @@
 package com.tv.biblia.ui
 
-import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,23 +23,34 @@ import kotlinx.coroutines.launch
 
 object Rutas {
     const val LIBROS = "libros"
+    const val BUSQUEDA = "busqueda"
     const val CAPITULOS = "capitulos/{usfmLibro}"
-    const val VERSICULOS = "versiculos/{usfmLibro}/{numeroCapitulo}"
+    const val VERSICULOS =
+        "versiculos/{usfmLibro}/{numeroCapitulo}?numeroVersiculo={numeroVersiculo}"
 
     fun capitulos(usfm: String) = "capitulos/$usfm"
-    fun versiculos(usfm: String, numero: Int) =
-        "versiculos/$usfm/$numero"
+
+    fun versiculos(
+        usfm: String,
+        numero: Int,
+        versiculo: Int? = null
+    ): String {
+        val ruta = "versiculos/$usfm/$numero"
+        return if (versiculo != null) {
+            "$ruta?numeroVersiculo=$versiculo"
+        } else {
+            ruta
+        }
+    }
 }
 
 @Composable
 fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
-
     val estado by viewModel.estado.collectAsState()
     val navController = rememberNavController()
     val context = LocalContext.current
 
     when (val e = estado) {
-
         is BibliaUiState.Cargando -> {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -60,22 +70,40 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
         }
 
         is BibliaUiState.Listo -> {
-
             val libros = e.libros
 
             NavHost(
                 navController = navController,
                 startDestination = Rutas.LIBROS
             ) {
-
                 composable(Rutas.LIBROS) {
-
                     PantallaLibros(
                         libros = libros,
                         onLibroClick = { libro ->
                             navController.navigate(
                                 Rutas.capitulos(libro.usfm)
                             )
+                        },
+                        onBuscarClick = {
+                            navController.navigate(Rutas.BUSQUEDA)
+                        }
+                    )
+                }
+
+                composable(Rutas.BUSQUEDA) {
+                    PantallaBusqueda(
+                        libros = libros,
+                        onResultadoClick = { resultado ->
+                            navController.navigate(
+                                Rutas.versiculos(
+                                    resultado.usfm,
+                                    resultado.capitulo,
+                                    resultado.versiculo
+                                )
+                            )
+                        },
+                        onBack = {
+                            navController.popBackStack()
                         }
                     )
                 }
@@ -88,22 +116,18 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
                         }
                     )
                 ) { backStackEntry ->
+                    val usfm = backStackEntry.arguments
+                        ?.getString("usfmLibro")
+                        .orEmpty()
 
-                    val usfm =
-                        backStackEntry.arguments
-                            ?.getString("usfmLibro")
-                            .orEmpty()
-
-                    val libro =
-                        libros.firstOrNull { it.usfm == usfm }
+                    val libro = libros.firstOrNull {
+                        it.usfm == usfm
+                    }
 
                     if (libro != null) {
-
                         PantallaCapitulos(
                             libro = libro,
-
                             onCapituloClick = { num ->
-
                                 CoroutineScope(Dispatchers.IO).launch {
                                     LecturaStore.guardar(
                                         context,
@@ -113,13 +137,9 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
                                 }
 
                                 navController.navigate(
-                                    Rutas.versiculos(
-                                        libro.usfm,
-                                        num
-                                    )
+                                    Rutas.versiculos(libro.usfm, num)
                                 )
                             },
-
                             onBack = {
                                 navController.popBackStack()
                             }
@@ -135,31 +155,36 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
                         },
                         navArgument("numeroCapitulo") {
                             type = NavType.IntType
+                        },
+                        navArgument("numeroVersiculo") {
+                            type = NavType.IntType
+                            defaultValue = -1
                         }
                     )
                 ) { backStackEntry ->
+                    val usfm = backStackEntry.arguments
+                        ?.getString("usfmLibro")
+                        .orEmpty()
 
-                    val usfm =
-                        backStackEntry.arguments
-                            ?.getString("usfmLibro")
-                            .orEmpty()
+                    val num = backStackEntry.arguments
+                        ?.getInt("numeroCapitulo") ?: 1
 
-                    val num =
-                        backStackEntry.arguments
-                            ?.getInt("numeroCapitulo")
-                            ?: 1
+                    val numVersiculo = backStackEntry.arguments
+                        ?.getInt("numeroVersiculo", -1)
+                        ?.takeIf { it > 0 }
 
-                    val libro =
-                        libros.firstOrNull { it.usfm == usfm }
+                    val libro = libros.firstOrNull {
+                        it.usfm == usfm
+                    }
 
                     if (libro != null) {
-
                         PantallaVersiculos(
                             libro = libro,
                             numeroCapitulo = num,
                             onBack = {
                                 navController.popBackStack()
-                            }
+                            },
+                            numeroVersiculoInicial = numVersiculo
                         )
                     }
                 }
