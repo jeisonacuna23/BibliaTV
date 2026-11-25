@@ -18,11 +18,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tv.biblia.data.Item
 import com.tv.biblia.data.Libro
+
+private val AzulPastel = Color(0xFF6C9DFF)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,19 +39,35 @@ fun PantallaVersiculos(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("${libro.human} $numeroCapitulo") },
+                title = {
+                    Text(
+                        text = "${libro.human} $numeroCapitulo",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Atrás"
+                        )
                     }
                 }
             )
         }
     ) { padding ->
+
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+
+            contentPadding = PaddingValues(
+                horizontal = 24.dp,
+                vertical = 20.dp
+            ),
+
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(items) { item ->
                 RenderItem(item)
@@ -59,33 +78,46 @@ fun PantallaVersiculos(
 
 @Composable
 private fun RenderItem(item: Item) {
+
     when {
+
         item.esEncabezado -> {
             Text(
-                text = item.texto,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                text = item.texto.uppercase(),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = AzulPastel,
+                modifier = Modifier.padding(
+                    top = 16.dp,
+                    bottom = 8.dp
+                )
             )
         }
+
         item.esVersiculo -> {
+
             Row {
+
                 Text(
                     text = "${item.numeroVersiculo} ",
-                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 13.sp
+                    color = AzulPastel,
+                    fontSize = 14.sp
                 )
+
                 Text(
                     text = item.texto,
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = 32.sp
                 )
             }
         }
+
         else -> {
+
             if (item.lines.isNotEmpty()) {
+
                 Text(
                     text = item.texto,
                     style = MaterialTheme.typography.bodyMedium
