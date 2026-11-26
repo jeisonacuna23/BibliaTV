@@ -8,3 +8,7 @@ local.properties
 captures/
 .externalNativeBuild
 .cxx
+
+# Llaves privadas de firma
+*.jks
+*.keystore
