@@ -394,7 +394,7 @@ private fun guardarImagenBiblica(
     val pinturaReferencia = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         this.color = color
         textSize = 43f
-        typeface = Typeface.create(typeface, Typeface.BOLD)
+        this.typeface = Typeface.create(typeface, Typeface.BOLD)
         textAlign = Paint.Align.CENTER
     }
 
