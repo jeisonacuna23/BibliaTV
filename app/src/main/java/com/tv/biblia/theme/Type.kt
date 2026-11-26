@@ -8,11 +8,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.tv.biblia.R
 
+// Tipografía original de BibliaTV
 val Nunito = FontFamily(
     Font(R.font.nunito_regular),
     Font(R.font.nunito_bold, FontWeight.Bold)
 )
 
+// Tipografías disponibles para el creador de imágenes
+val Lora = FontFamily(
+    Font(R.font.lora)
+)
+
+val PlayfairDisplay = FontFamily(
+    Font(R.font.playfair_display)
+)
+
+val Montserrat = FontFamily(
+    Font(R.font.montserrat)
+)
+
+// Tipografía general de la aplicación: se conserva Nunito
 val BibliaTypography = Typography(
 
     titleLarge = TextStyle(

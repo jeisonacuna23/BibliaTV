@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,12 +58,19 @@ fun PantallaVersiculos(
     val items = libro.chapters.getOrNull(numeroCapitulo - 1).orEmpty()
     val clipboard = LocalClipboardManager.current
     val listaState = rememberLazyListState()
+
     var seleccionados by remember { mutableStateOf(setOf<Int>()) }
+    var mostrarEditor by remember { mutableStateOf(false) }
+
+    val versiculoSeleccionado = items.firstOrNull {
+        it.esVersiculo && it.numeroVersiculo?.let { numero -> numero in seleccionados } == true
+    }
 
     LaunchedEffect(numeroVersiculoInicial, items) {
         if (numeroVersiculoInicial != null) {
             val indice = items.indexOfFirst {
-                it.esVersiculo && it.numeroVersiculo == numeroVersiculoInicial
+                it.esVersiculo &&
+                    it.numeroVersiculo == numeroVersiculoInicial
             }
             if (indice >= 0) listaState.scrollToItem(indice)
         }
@@ -70,99 +78,124 @@ fun PantallaVersiculos(
 
     val textoSeleccionado = items
         .filter {
-            it.esVersiculo && it.numeroVersiculo?.let { numero -> numero in seleccionados } == true
+            it.esVersiculo &&
+                it.numeroVersiculo?.let { numero -> numero in seleccionados } == true
         }
         .joinToString("\n\n") {
             "${libro.human} $numeroCapitulo:${it.numeroVersiculo}\n${it.texto}"
         }
 
-    Scaffold(
-        containerColor = Color.White,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (seleccionados.isEmpty()) {
-                            "${libro.human} $numeroCapitulo"
-                        } else {
-                            "${seleccionados.size} seleccionados"
-                        }
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Atrás"
-                        )
-                    }
-                },
-                actions = {
-                    if (seleccionados.isNotEmpty()) {
-                        IconButton(
-                            onClick = {
-                                clipboard.setText(
-                                    AnnotatedString(textoSeleccionado)
-                                )
-                                seleccionados = emptySet()
-                            }
-                        ) {
-                            Icon(
-                                Icons.Default.ContentCopy,
-                                contentDescription = "Copiar versículos"
-                            )
-                        }
-                        IconButton(onClick = { seleccionados = emptySet() }) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = "Cancelar selección"
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = AzulBarra,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
-            )
-        }
-    ) { padding ->
-        LazyColumn(
-            state = listaState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(
-                horizontal = 20.dp,
-                vertical = 18.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            itemsIndexed(items) { _, item ->
-                RenderItem(
-                    item = item,
-                    seleccionado = item.numeroVersiculo?.let { it in seleccionados } == true,
-                    onClick = {
-                        val numero = item.numeroVersiculo
-                        if (item.esVersiculo && numero != null &&
-                            seleccionados.isNotEmpty()
-                        ) {
-                            seleccionados = if (numero in seleccionados) {
-                                seleccionados - numero
+    if (mostrarEditor && versiculoSeleccionado != null) {
+        PantallaCrearImagen(
+            texto = versiculoSeleccionado.texto,
+            referencia = "${libro.human} $numeroCapitulo:${versiculoSeleccionado.numeroVersiculo}",
+            onBack = { mostrarEditor = false }
+        )
+    } else {
+        Scaffold(
+            containerColor = Color.White,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            if (seleccionados.isEmpty()) {
+                                "${libro.human} $numeroCapitulo"
                             } else {
-                                seleccionados + numero
+                                "${seleccionados.size} seleccionados"
+                            }
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Atrás"
+                            )
+                        }
+                    },
+                    actions = {
+                        if (seleccionados.size == 1) {
+                            IconButton(
+                                onClick = { mostrarEditor = true }
+                            ) {
+                                Icon(
+                                    Icons.Default.Image,
+                                    contentDescription = "Crear imagen"
+                                )
+                            }
+                        }
+
+                        if (seleccionados.isNotEmpty()) {
+                            IconButton(
+                                onClick = {
+                                    clipboard.setText(
+                                        AnnotatedString(textoSeleccionado)
+                                    )
+                                    seleccionados = emptySet()
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.ContentCopy,
+                                    contentDescription = "Copiar versículos"
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { seleccionados = emptySet() }
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Cancelar selección"
+                                )
                             }
                         }
                     },
-                    onLongClick = {
-                        val numero = item.numeroVersiculo
-                        if (item.esVersiculo && numero != null) {
-                            seleccionados = seleccionados + numero
-                        }
-                    }
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = AzulBarra,
+                        titleContentColor = Color.White,
+                        navigationIconContentColor = Color.White,
+                        actionIconContentColor = Color.White
+                    )
                 )
+            }
+        ) { padding ->
+            LazyColumn(
+                state = listaState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(
+                    horizontal = 20.dp,
+                    vertical = 18.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                itemsIndexed(items) { _, item ->
+                    RenderItem(
+                        item = item,
+                        seleccionado = item.numeroVersiculo?.let {
+                            it in seleccionados
+                        } == true,
+                        onClick = {
+                            val numero = item.numeroVersiculo
+                            if (item.esVersiculo && numero != null &&
+                                seleccionados.isNotEmpty()
+                            ) {
+                                seleccionados = if (numero in seleccionados) {
+                                    seleccionados - numero
+                                } else {
+                                    seleccionados + numero
+                                }
+                            }
+                        },
+                        onLongClick = {
+                            val numero = item.numeroVersiculo
+                            if (item.esVersiculo && numero != null) {
+                                seleccionados = seleccionados + numero
+                            }
+                        }
+                    )
+                }
             }
         }
     }
@@ -207,6 +240,7 @@ private fun RenderItem(
                     color = AzulPrimario,
                     fontSize = 14.sp
                 )
+
                 Text(
                     text = item.texto,
                     style = MaterialTheme.typography.bodyLarge,
