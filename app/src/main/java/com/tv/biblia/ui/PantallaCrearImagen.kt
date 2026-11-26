@@ -411,7 +411,6 @@ private fun guardarImagenBiblica(
         textSize = 25f
         this.typeface = typeface
         textAlign = Paint.Align.CENTER
-        letterSpacing = 2f
     }
 
     canvas.drawText(
