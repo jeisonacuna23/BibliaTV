@@ -1,14 +1,18 @@
 package com.tv.biblia.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -44,7 +48,7 @@ fun PantallaLibros(
     onLibroClick: (Libro) -> Unit,
     onSearchClick: () -> Unit
 ) {
-    var testamentoSeleccionado by remember { mutableIntStateOf(0) }
+    var testamentoSeleccionado by remember { mutableStateOf(0) }
 
     val grupos = if (testamentoSeleccionado == 0) {
         gruposAntiguo
@@ -80,22 +84,42 @@ fun PantallaLibros(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            TabRow(
-                selectedTabIndex = testamentoSeleccionado,
-                containerColor = AzulBarra,
-                contentColor = Color.White
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AzulBarra)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Tab(
-                    selected = testamentoSeleccionado == 0,
-                    onClick = { testamentoSeleccionado = 0 },
-                    text = { Text("Antiguo Testamento") }
-                )
+                listOf("Antiguo Testamento", "Nuevo Testamento").forEachIndexed { index, titulo ->
+                    val seleccionado = testamentoSeleccionado == index
 
-                Tab(
-                    selected = testamentoSeleccionado == 1,
-                    onClick = { testamentoSeleccionado = 1 },
-                    text = { Text("Nuevo Testamento") }
-                )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (seleccionado) Color.White
+                                else Color.Transparent
+                            )
+                            .clickable {
+                                testamentoSeleccionado = index
+                            }
+                            .padding(horizontal = 4.dp, vertical = 13.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = titulo,
+                            color = if (seleccionado) AzulPrimario else Color.White,
+                            fontWeight = if (seleccionado) {
+                                FontWeight.Bold
+                            } else {
+                                FontWeight.Medium
+                            },
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
             }
 
             LazyColumn(

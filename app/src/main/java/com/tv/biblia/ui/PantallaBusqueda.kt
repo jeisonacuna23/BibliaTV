@@ -21,11 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -33,6 +29,10 @@ import com.tv.biblia.data.Libro
 import com.tv.biblia.theme.AzulBarra
 import com.tv.biblia.theme.AzulClaro
 import com.tv.biblia.theme.AzulPrimario
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import java.text.Normalizer
 
 private data class ResultadoBusqueda(
     val libro: Libro,
@@ -40,6 +40,81 @@ private data class ResultadoBusqueda(
     val versiculo: Int,
     val texto: String
 )
+
+private fun normalizarBusqueda(texto: String): String {
+    return Normalizer.normalize(texto.lowercase(), Normalizer.Form.NFD)
+        .replace(Regex("\\p{Mn}+"), "")
+        .trim()
+}
+
+private fun buscarEnBiblia(
+    consulta: String,
+    libros: List<Libro>
+): List<ResultadoBusqueda> {
+    val termino = consulta.trim()
+    if (termino.isBlank()) return emptyList()
+
+    val patronCita = Regex("^(.+?)\\s+(\\d+)\\s*:\\s*(\\d+)$")
+    val cita = patronCita.matchEntire(termino)
+
+    if (cita != null) {
+        val nombreLibro = normalizarBusqueda(cita.groupValues[1])
+        val numeroCapitulo = cita.groupValues[2].toIntOrNull() ?: return emptyList()
+        val numeroVersiculo = cita.groupValues[3].toIntOrNull() ?: return emptyList()
+
+        val libro = libros.firstOrNull {
+            normalizarBusqueda(it.human) == nombreLibro
+        } ?: return emptyList()
+
+        val capitulo = libro.chapters.getOrNull(numeroCapitulo - 1)
+            ?: return emptyList()
+
+        val item = capitulo.firstOrNull {
+            it.esVersiculo && numeroVersiculo in it.verse_numbers
+        } ?: return emptyList()
+
+        return listOf(
+            ResultadoBusqueda(
+                libro = libro,
+                capitulo = numeroCapitulo,
+                versiculo = numeroVersiculo,
+                texto = item.texto
+            )
+        )
+    }
+
+    val terminoNormalizado = normalizarBusqueda(termino)
+    if (terminoNormalizado.isBlank()) return emptyList()
+
+    return buildList {
+        for (libro in libros) {
+            if (size >= 200) break
+
+            for ((indiceCapitulo, capitulo) in libro.chapters.withIndex()) {
+                if (size >= 200) break
+
+                for (item in capitulo) {
+                    if (size >= 200) break
+
+                    if (!item.esVersiculo) continue
+
+                    if (normalizarBusqueda(item.texto).contains(terminoNormalizado)) {
+                        val numero = item.numeroVersiculo ?: continue
+
+                        add(
+                            ResultadoBusqueda(
+                                libro = libro,
+                                capitulo = indiceCapitulo + 1,
+                                versiculo = numero,
+                                texto = item.texto
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,39 +124,28 @@ fun PantallaBusqueda(
     onResultadoClick: (String, Int, Int) -> Unit
 ) {
     var consulta by remember { mutableStateOf("") }
+    var resultados by remember { mutableStateOf(emptyList<ResultadoBusqueda>()) }
+    var buscando by remember { mutableStateOf(false) }
 
-    val resultados = remember(consulta, libros) {
-        val termino = consulta.trim()
-        if (termino.isBlank()) {
-            emptyList()
+    LaunchedEffect(consulta, libros) {
+        if (consulta.isBlank()) {
+            resultados = emptyList()
+            buscando = false
         } else {
-            buildList {
-                for (libro in libros) {
-                    for ((indiceCapitulo, capitulo) in libro.chapters.withIndex()) {
-                        for (item in capitulo) {
-                            if (
-                                item.esVersiculo &&
-                                item.texto.contains(termino, ignoreCase = true)
-                            ) {
-                                val numero = item.numeroVersiculo ?: continue
-                                add(
-                                    ResultadoBusqueda(
-                                        libro,
-                                        indiceCapitulo + 1,
-                                        numero,
-                                        item.texto
-                                    )
-                                )
-                                if (size >= 200) break
-                            }
-                        }
-                        if (size >= 200) break
-                    }
-                    if (size >= 200) break
-                }
+            buscando = true
+            delay(250)
+
+            val nuevosResultados = withContext(Dispatchers.Default) {
+                buscarEnBiblia(consulta, libros)
             }
+
+            resultados = nuevosResultados
+            buscando = false
         }
     }
+
+    val esCita = Regex("^(.+?)\\s+(\\d+)\\s*:\\s*(\\d+)$")
+        .matches(consulta.trim())
 
     Scaffold(
         containerColor = AzulClaro,
@@ -115,8 +179,8 @@ fun PantallaBusqueda(
                 onValueChange = { consulta = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                label = { Text("Palabra o frase") },
-                placeholder = { Text("Ej. En el principio") },
+                label = { Text("Palabra, frase o cita bíblica") },
+                placeholder = { Text("Ej. Juan 16:33") },
                 leadingIcon = {
                     Icon(
                         Icons.Default.Search,
@@ -127,10 +191,20 @@ fun PantallaBusqueda(
 
             Text(
                 text = when {
-                    consulta.isBlank() -> "Escribe algo para buscar en los 66 libros."
-                    resultados.isEmpty() -> "No se encontraron coincidencias."
-                    resultados.size >= 200 -> "Se muestran los primeros 200 resultados."
-                    else -> "${resultados.size} resultados encontrados"
+                    consulta.isBlank() ->
+                        "Busca palabras, frases o una cita como Juan 16:33."
+                    buscando ->
+                        "Buscando..."
+                    resultados.isEmpty() && esCita ->
+                        "No se encontró esa cita. Comprueba el libro, capítulo y versículo."
+                    resultados.isEmpty() ->
+                        "No se encontraron coincidencias."
+                    esCita ->
+                        "Cita encontrada"
+                    resultados.size >= 200 ->
+                        "Se muestran los primeros 200 resultados."
+                    else ->
+                        "${resultados.size} resultados encontrados"
                 },
                 color = AzulPrimario,
                 modifier = Modifier.padding(vertical = 12.dp)

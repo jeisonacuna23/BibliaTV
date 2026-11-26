@@ -1,6 +1,8 @@
 package com.tv.biblia.ui
 
 import android.app.Application
+import android.os.SystemClock
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tv.biblia.data.Libro
@@ -9,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 sealed interface BibliaUiState {
@@ -29,17 +32,47 @@ class BibliaViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun cargarBiblia() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val texto = getApplication<Application>().assets
-                    .open("biblia_slim.json")
-                    .bufferedReader()
-                    .use { it.readText() }
+        viewModelScope.launch {
+            val inicioTotal = SystemClock.elapsedRealtime()
 
-                val libros = json.decodeFromString<List<Libro>>(texto)
+            try {
+                val inicioLectura = SystemClock.elapsedRealtime()
+
+                val texto = withContext(Dispatchers.IO) {
+                    getApplication<Application>().assets
+                        .open("biblia_slim.json")
+                        .bufferedReader()
+                        .use { it.readText() }
+                }
+
+                val tiempoLectura = SystemClock.elapsedRealtime() - inicioLectura
+
+                val inicioConversion = SystemClock.elapsedRealtime()
+
+                val libros = withContext(Dispatchers.Default) {
+                    json.decodeFromString<List<Libro>>(texto)
+                }
+
+                val tiempoConversion = SystemClock.elapsedRealtime() - inicioConversion
+                val tiempoTotal = SystemClock.elapsedRealtime() - inicioTotal
+
+                Log.i(
+                    "BibliaTV_Load",
+                    "JSON leído: ${tiempoLectura} ms | " +
+                        "Conversión: ${tiempoConversion} ms | " +
+                        "Total: ${tiempoTotal} ms | " +
+                        "Libros: ${libros.size} | " +
+                        "Tamaño: ${texto.length} caracteres"
+                )
+
                 _estado.value = BibliaUiState.Listo(libros)
+
             } catch (e: Throwable) {
-                _estado.value = BibliaUiState.Error("${e.javaClass.simpleName}: ${e.message ?: "Error sin mensaje"}")
+                Log.e("BibliaTV_Load", "Error cargando la Biblia", e)
+
+                _estado.value = BibliaUiState.Error(
+                    "${e.javaClass.simpleName}: ${e.message ?: "Error sin mensaje"}"
+                )
             }
         }
     }
