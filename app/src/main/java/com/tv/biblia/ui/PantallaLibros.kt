@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,9 +47,11 @@ private val gruposNuevo = listOf(
 fun PantallaLibros(
     libros: List<Libro>,
     onLibroClick: (Libro) -> Unit,
-    onSearchClick: () -> Unit
+    onSearchClick: () -> Unit,
+    onProverbioClick: () -> Unit
 ) {
     var testamentoSeleccionado by remember { mutableStateOf(0) }
+    var menuAbierto by remember { mutableStateOf(false) }
 
     val grupos = if (testamentoSeleccionado == 0) {
         gruposAntiguo
@@ -70,6 +73,30 @@ fun PantallaLibros(
                             contentDescription = "Buscar en la Biblia"
                         )
                     }
+
+                    Box {
+                        IconButton(onClick = { menuAbierto = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "Más opciones"
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = menuAbierto,
+                            onDismissRequest = { menuAbierto = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Versículo de Proverbios")
+                                },
+                                onClick = {
+                                    menuAbierto = false
+                                    onProverbioClick()
+                                }
+                            )
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = AzulBarra,
@@ -79,11 +106,13 @@ fun PantallaLibros(
             )
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -91,7 +120,11 @@ fun PantallaLibros(
                     .padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                listOf("Antiguo Testamento", "Nuevo Testamento").forEachIndexed { index, titulo ->
+                listOf(
+                    "Antiguo Testamento",
+                    "Nuevo Testamento"
+                ).forEachIndexed { index, titulo ->
+
                     val seleccionado = testamentoSeleccionado == index
 
                     Box(
@@ -127,11 +160,13 @@ fun PantallaLibros(
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 grupos.forEach { grupo ->
+
                     val librosDelGrupo = grupo.codigos.mapNotNull {
                         librosPorCodigo[it]
                     }
 
                     if (librosDelGrupo.isNotEmpty()) {
+
                         item(key = "grupo_${grupo.titulo}") {
                             Text(
                                 text = grupo.titulo,
@@ -151,6 +186,7 @@ fun PantallaLibros(
                             items = librosDelGrupo,
                             key = { it.usfm }
                         ) { libro ->
+
                             ListItem(
                                 headlineContent = {
                                     Text(

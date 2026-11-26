@@ -1,6 +1,5 @@
 package com.tv.biblia.ui
 
-import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,6 +25,7 @@ object Rutas {
     const val LIBROS = "libros"
     const val CAPITULOS = "capitulos/{usfmLibro}"
     const val BUSQUEDA = "busqueda"
+    const val PROVERBIOS = "proverbios"
     const val VERSICULOS = "versiculos/{usfmLibro}/{numeroCapitulo}?verso={verso}"
 
     fun capitulos(usfm: String) = "capitulos/$usfm"
@@ -77,8 +77,29 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
                         },
                         onSearchClick = {
                             navController.navigate(Rutas.BUSQUEDA)
+                        },
+                        onProverbioClick = {
+                            navController.navigate(Rutas.PROVERBIOS)
                         }
                     )
+                }
+
+                composable(Rutas.PROVERBIOS) {
+                    val libroProverbios = libros.firstOrNull { it.usfm == "PRO" }
+
+                    if (libroProverbios != null) {
+                        PantallaProverbio(
+                            libro = libroProverbios,
+                            onBack = { navController.popBackStack() }
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No se encontró el libro de Proverbios.")
+                        }
+                    }
                 }
 
                 composable(Rutas.BUSQUEDA) {
@@ -103,6 +124,7 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
                 ) { backStackEntry ->
                     val usfm = backStackEntry.arguments
                         ?.getString("usfmLibro").orEmpty()
+
                     val libro = libros.firstOrNull { it.usfm == usfm }
 
                     if (libro != null) {
@@ -112,6 +134,7 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
                                 CoroutineScope(Dispatchers.IO).launch {
                                     LecturaStore.guardar(context, libro.usfm, num)
                                 }
+
                                 navController.navigate(
                                     Rutas.versiculos(libro.usfm, num)
                                 )
@@ -138,10 +161,13 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
                 ) { backStackEntry ->
                     val usfm = backStackEntry.arguments
                         ?.getString("usfmLibro").orEmpty()
+
                     val num = backStackEntry.arguments
                         ?.getInt("numeroCapitulo") ?: 1
+
                     val verso = backStackEntry.arguments
                         ?.getInt("verso")?.takeIf { it > 0 }
+
                     val libro = libros.firstOrNull { it.usfm == usfm }
 
                     if (libro != null) {
