@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -139,7 +140,10 @@ fun PantallaVersiculos(
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = onBack) {
+                        IconButton(
+                        modifier = Modifier.clip(CircleShape),
+                        onClick = onBack
+                    ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Atrás"
@@ -200,6 +204,7 @@ fun PantallaVersiculos(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(
+                        modifier = Modifier.clip(CircleShape),
                         onClick = {
                             capituloAnterior?.let { (usfm, numero) ->
                                 onNavigateChapter(usfm, numero)
@@ -219,6 +224,7 @@ fun PantallaVersiculos(
                     }
 
                     IconButton(
+                        modifier = Modifier.clip(CircleShape),
                         onClick = {
                             capituloSiguiente?.let { (usfm, numero) ->
                                 onNavigateChapter(usfm, numero)
