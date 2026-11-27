@@ -3,12 +3,15 @@ package com.tv.biblia.ui
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,10 +36,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -140,10 +146,7 @@ fun PantallaVersiculos(
                         )
                     },
                     navigationIcon = {
-                        IconButton(
-                        modifier = Modifier.clip(CircleShape),
-                        onClick = onBack
-                    ) {
+                        NoRippleIconButton(onClick = onBack) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Atrás"
@@ -203,14 +206,13 @@ fun PantallaVersiculos(
                         .padding(horizontal = 24.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(
-                        modifier = Modifier.clip(CircleShape),
+                    NoRippleIconButton(
+                        enabled = capituloAnterior != null,
                         onClick = {
                             capituloAnterior?.let { (usfm, numero) ->
                                 onNavigateChapter(usfm, numero)
                             }
-                        },
-                        enabled = capituloAnterior != null
+                        }
                     ) {
                         Text(
                             text = "\uf053",
@@ -223,14 +225,13 @@ fun PantallaVersiculos(
                         )
                     }
 
-                    IconButton(
-                        modifier = Modifier.clip(CircleShape),
+                    NoRippleIconButton(
+                        enabled = capituloSiguiente != null,
                         onClick = {
                             capituloSiguiente?.let { (usfm, numero) ->
                                 onNavigateChapter(usfm, numero)
                             }
-                        },
-                        enabled = capituloSiguiente != null
+                        }
                     ) {
                         Text(
                             text = "\uf054",
@@ -345,5 +346,31 @@ private fun RenderItem(
                 )
             }
         }
+    }
+}
+
+
+@Composable
+private fun NoRippleIconButton(
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = enabled,
+                role = Role.Button,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        content()
     }
 }
