@@ -1,7 +1,12 @@
 package com.tv.biblia.ui
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -9,14 +14,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.tv.biblia.R
 import com.tv.biblia.storage.LecturaStore
+import com.tv.biblia.theme.AzulClaro
+import com.tv.biblia.theme.AzulPrimario
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,15 +51,36 @@ object Rutas {
 fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
     val estado by viewModel.estado.collectAsState()
     val navController = rememberNavController()
-    val context = LocalContext.current
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     when (val e = estado) {
         is BibliaUiState.Cargando -> {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(AzulClaro),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(22.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.bibliatv_logo),
+                        contentDescription = "Logo de BibliaTV",
+                        modifier = Modifier.size(190.dp),
+                        contentScale = ContentScale.Fit
+                    )
+
+                    Text(
+                        text = "Preparando tu Biblia...",
+                        color = AzulPrimario
+                    )
+
+                    CircularProgressIndicator(
+                        color = AzulPrimario
+                    )
+                }
             }
         }
 
@@ -174,8 +205,14 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
                         PantallaVersiculos(
                             libro = libro,
                             numeroCapitulo = num,
+                            libros = libros,
                             numeroVersiculoInicial = verso,
-                            onBack = { navController.popBackStack() }
+                            onBack = { navController.popBackStack() },
+                            onNavigateChapter = { nuevoUsfm, nuevoNumero ->
+                                navController.navigate(
+                                    Rutas.versiculos(nuevoUsfm, nuevoNumero)
+                                )
+                            }
                         )
                     }
                 }

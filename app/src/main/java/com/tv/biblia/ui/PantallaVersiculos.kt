@@ -36,10 +36,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tv.biblia.R
 import com.tv.biblia.data.Item
 import com.tv.biblia.data.Libro
 import com.tv.biblia.theme.AzulBarra
@@ -47,17 +52,45 @@ import com.tv.biblia.theme.AzulClaro
 import com.tv.biblia.theme.AzulPrimario
 import com.tv.biblia.theme.AzulSeleccion
 
+private val FontAwesome = FontFamily(
+    Font(R.font.fa_solid_900)
+)
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun PantallaVersiculos(
     libro: Libro,
     numeroCapitulo: Int,
+    libros: List<Libro>,
     onBack: () -> Unit,
+    onNavigateChapter: (String, Int) -> Unit,
     numeroVersiculoInicial: Int? = null
 ) {
     val items = libro.chapters.getOrNull(numeroCapitulo - 1).orEmpty()
     val clipboard = LocalClipboardManager.current
     val listaState = rememberLazyListState()
+
+    val indiceLibro = libros.indexOfFirst { it.usfm == libro.usfm }
+
+    val capituloAnterior = when {
+        numeroCapitulo > 1 -> libro.usfm to (numeroCapitulo - 1)
+        indiceLibro > 0 -> libros.getOrNull(indiceLibro - 1)?.let {
+            it.usfm to it.totalCapitulos
+        }
+        else -> null
+    }
+
+    val capituloSiguiente = when {
+        numeroCapitulo < libro.totalCapitulos ->
+            libro.usfm to (numeroCapitulo + 1)
+
+        indiceLibro >= 0 && indiceLibro < libros.lastIndex ->
+            libros.getOrNull(indiceLibro + 1)?.let {
+                it.usfm to 1
+            }
+
+        else -> null
+    }
 
     var seleccionados by remember { mutableStateOf(setOf<Int>()) }
     var mostrarEditor by remember { mutableStateOf(false) }
@@ -157,6 +190,53 @@ fun PantallaVersiculos(
                         actionIconContentColor = Color.White
                     )
                 )
+            },
+            bottomBar = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(AzulBarra)
+                        .padding(horizontal = 24.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(
+                        onClick = {
+                            capituloAnterior?.let { (usfm, numero) ->
+                                onNavigateChapter(usfm, numero)
+                            }
+                        },
+                        enabled = capituloAnterior != null
+                    ) {
+                        Text(
+                            text = "\uf053",
+                            fontFamily = FontAwesome,
+                            fontSize = 20.sp,
+                            color = Color.White,
+                            modifier = Modifier.semantics {
+                                contentDescription = "Capítulo anterior"
+                            }
+                        )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            capituloSiguiente?.let { (usfm, numero) ->
+                                onNavigateChapter(usfm, numero)
+                            }
+                        },
+                        enabled = capituloSiguiente != null
+                    ) {
+                        Text(
+                            text = "\uf054",
+                            fontFamily = FontAwesome,
+                            fontSize = 20.sp,
+                            color = Color.White,
+                            modifier = Modifier.semantics {
+                                contentDescription = "Capítulo siguiente"
+                            }
+                        )
+                    }
+                }
             }
         ) { padding ->
             LazyColumn(
