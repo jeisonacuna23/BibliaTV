@@ -207,7 +207,14 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
                             numeroCapitulo = num,
                             libros = libros,
                             numeroVersiculoInicial = verso,
-                            onBack = { navController.popBackStack() },
+                            onBack = {
+                                navController.navigate(Rutas.capitulos(usfm)) {
+                                    popUpTo(Rutas.LIBROS) {
+                                        inclusive = false
+                                    }
+                                    launchSingleTop = true
+                                }
+                            },
                             onNavigateChapter = { nuevoUsfm, nuevoNumero ->
                                 navController.navigate(
                                     Rutas.versiculos(nuevoUsfm, nuevoNumero)
