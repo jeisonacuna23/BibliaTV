@@ -1,5 +1,9 @@
 package com.tv.biblia.ui
 
+import androidx.compose.foundation.gestures.detectTapGestures
+
+import androidx.compose.ui.input.pointer.pointerInput
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -356,19 +360,17 @@ private fun NoRippleIconButton(
     onClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
     Box(
         modifier = Modifier
             .size(48.dp)
             .clip(CircleShape)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                enabled = enabled,
-                role = Role.Button,
-                onClick = onClick
-            ),
+            .pointerInput(enabled) {
+                detectTapGestures(
+                    onTap = {
+                        if (enabled) onClick()
+                    }
+                )
+            },
         contentAlignment = Alignment.Center
     ) {
         content()
