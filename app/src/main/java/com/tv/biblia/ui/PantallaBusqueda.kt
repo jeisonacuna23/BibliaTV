@@ -1,5 +1,13 @@
 package com.tv.biblia.ui
 
+import androidx.compose.ui.draw.clip
+
+import androidx.compose.foundation.shape.RoundedCornerShape
+
+import androidx.compose.foundation.layout.Row
+
+import androidx.compose.foundation.background
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -251,6 +259,7 @@ fun PantallaBusqueda(
         mutableStateOf(emptyList<ResultadoBusqueda>())
     }
     var buscando by remember { mutableStateOf(false) }
+    var librosExpandidos by remember { mutableStateOf(setOf<String>()) }
 
     LaunchedEffect(consulta, libros, modo) {
         if (consulta.isBlank()) {
@@ -403,57 +412,76 @@ fun PantallaBusqueda(
             )
 
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(
                     items = grupos,
                     key = { it.libro.usfm }
                 ) { grupo ->
-                    Column(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "${grupo.libro.human} · ${grupo.resultados.size} coincidencias",
-                            color = AzulPrimario,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(
-                                start = 12.dp,
-                                top = 12.dp,
-                                bottom = 4.dp
-                            )
-                        )
+                    val expandido = grupo.libro.usfm in librosExpandidos
 
-                        grupo.resultados.forEach { resultado ->
-                            ListItem(
-                                headlineContent = {
-                                    Text(
-                                        "${resultado.libro.human} ${resultado.capitulo}:${resultado.versiculo}",
-                                        color = AzulPrimario
-                                    )
-                                },
-                                supportingContent = {
-                                    Text(
-                                        if (modo == ModoBusqueda.PALABRA) {
-                                            textoConResaltado(
-                                                resultado.texto,
-                                                consulta
-                                            )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    librosExpandidos =
+                                        if (expandido) {
+                                            librosExpandidos - grupo.libro.usfm
                                         } else {
-                                            AnnotatedString(resultado.texto)
+                                            librosExpandidos + grupo.libro.usfm
                                         }
-                                    )
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        onResultadoClick(
-                                            resultado.libro.usfm,
-                                            resultado.capitulo,
-                                            resultado.versiculo
-                                        )
-                                    }
+                                }
+                                .padding(horizontal = 16.dp, vertical = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "${grupo.libro.human} · ${grupo.resultados.size} coincidencias",
+                                color = AzulPrimario,
+                                fontWeight = FontWeight.Bold
                             )
+                            Text(
+                                text = if (expandido) "−" else "+",
+                                color = AzulPrimario,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        if (expandido) {
+                            grupo.resultados.forEach { resultado ->
+                                ListItem(
+                                    headlineContent = {
+                                        Text(
+                                            "${resultado.libro.human} ${resultado.capitulo}:${resultado.versiculo}",
+                                            color = AzulPrimario
+                                        )
+                                    },
+                                    supportingContent = {
+                                        Text(
+                                            if (modo == ModoBusqueda.PALABRA) {
+                                                textoConResaltado(resultado.texto, consulta)
+                                            } else {
+                                                AnnotatedString(resultado.texto)
+                                            }
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onResultadoClick(
+                                                resultado.libro.usfm,
+                                                resultado.capitulo,
+                                                resultado.versiculo
+                                            )
+                                        }
+                                )
+                            }
                         }
                     }
                 }
