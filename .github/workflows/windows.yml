@@ -1,0 +1,36 @@
+name: Build BibliaTV Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - reconstruccion-limpia
+    paths:
+      - 'windows/**'
+      - 'app/src/main/assets/biblia_slim.json'
+      - '.github/workflows/windows.yml'
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Compilar BibliaTV para Windows x86
+        run: >
+          msbuild windows/BibliaTV.Windows/BibliaTV.Windows.csproj
+          /p:Configuration=Release
+          /p:Platform=x86
+          /m
+
+      - name: Publicar aplicación
+        uses: actions/upload-artifact@v4
+        with:
+          name: BibliaTV-Windows-x86
+          path: windows/BibliaTV.Windows/bin/Release/
+          if-no-files-found: error

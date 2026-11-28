@@ -1,0 +1,11 @@
+<Application x:Class="BibliaTV.Windows.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <SolidColorBrush x:Key="AzulPrimario" Color="#1769D2"/>
+        <SolidColorBrush x:Key="AzulClaro" Color="#F2F7FF"/>
+        <SolidColorBrush x:Key="TextoOscuro" Color="#172B4D"/>
+        <SolidColorBrush x:Key="AzulBorde" Color="#D7E6FA"/>
+    </Application.Resources>
+</Application>

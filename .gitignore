@@ -12,3 +12,13 @@ captures/
 # Llaves privadas de firma
 *.jks
 *.keystore
+
+# .NET / WPF
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userprefs
+*.pdb
+*.cache
