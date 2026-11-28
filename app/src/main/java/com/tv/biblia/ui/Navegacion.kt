@@ -1,5 +1,9 @@
 package com.tv.biblia.ui
 
+import androidx.compose.animation.ExitTransition
+
+import androidx.compose.animation.EnterTransition
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -98,7 +102,11 @@ fun AppBiblia(viewModel: BibliaViewModel = viewModel()) {
 
             NavHost(
                 navController = navController,
-                startDestination = Rutas.LIBROS
+                startDestination = Rutas.LIBROS,
+                enterTransition = { EnterTransition.None },
+                exitTransition = { ExitTransition.None },
+                popEnterTransition = { EnterTransition.None },
+                popExitTransition = { ExitTransition.None }
             ) {
                 composable(Rutas.LIBROS) {
                     PantallaLibros(
